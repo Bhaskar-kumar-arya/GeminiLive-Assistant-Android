@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">assistantapp</string>
+    <string name="canvas_dismiss_content_desc">Close Canvas</string>
+</resources>

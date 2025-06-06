@@ -1,0 +1,38 @@
+{
+  "name": "gemini-live-api-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "ts-node src/server.ts",
+    "lint": "eslint . --ext .ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@types/node": "^22.15.21",
+    "@types/ws": "^8.18.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@discordjs/node-pre-gyp": "^0.4.5",
+    "@discordjs/opus": "^0.10.0",
+    "@google/genai": "^1.3.0",
+    "@google/generative-ai": "^0.24.1",
+    "dotenv": "^16.5.0",
+    "eventemitter3": "^5.0.1",
+    "node-addon-api": "^8.3.1",
+    "node-fetch": "^3.3.2",
+    "opus-decoder": "^0.7.10",
+    "wave-resampler": "^1.0.0",
+    "wavefile": "^11.0.0",
+    "wrtc": "^0.4.7",
+    "ws": "^8.18.2"
+  }
+}
