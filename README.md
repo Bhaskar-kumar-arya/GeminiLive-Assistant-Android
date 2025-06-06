@@ -78,7 +78,8 @@ DOCS_Optimized/              # Detailed docs, integration guides
 ### Android App
 1. Open `assistantapp/` in Android Studio
 2. Build & run on device/emulator
-3. Grant overlay and microphone permissions as prompted
+3. **After installing and running the app, you must manually grant overlay (draw over other apps) and microphone permissions from the device's Settings > Apps > [Your App] > Permissions.**
+   - This is required for the assistant to function correctly (for overlays and voice input).
 4. Use the Service Control UI to start/stop the assistant
 
 ---
