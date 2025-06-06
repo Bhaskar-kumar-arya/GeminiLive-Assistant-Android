@@ -81,11 +81,28 @@ DOCS_Optimized/              # Detailed docs, integration guides
 3. Grant overlay and microphone permissions as prompted
 4. Use the Service Control UI to start/stop the assistant
 
-### Server
-1. `cd gemini-live-api-server`
-2. `npm install`
-3. Add your Gemini API key to the server config
-4. `npm start`
+---
+
+## 🚦 How to Start the Server
+
+1. **Navigate to the server directory:**
+   ```sh
+   cd gemini-live-api-server
+   ```
+2. **Install dependencies:**
+   ```sh
+   npm install
+   ```
+3. **Set up your `.env` file:**
+   - Copy `.env.example` to `.env` (if provided), or create a `.env` file.
+   - Add your Gemini API key and any other required environment variables.
+4. **Start the server:**
+   ```sh
+   npm start
+   ```
+5. **Server should now be running on the configured port (default: 3001).**
+
+> **Note:** The Android app requires the server to be running and reachable on the configured IP address. Make sure both devices are on the same network and the IP is set correctly in `GeminiAssistantService.kt` and `network_security_config.xml`.
 
 ---
 
