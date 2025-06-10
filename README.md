@@ -24,6 +24,8 @@ The repository also includes:
 
 Or watch on [YouTube](https://youtube.com/shorts/WVsYYJ--WXM?si=b8UClQgCT83LuZvF).
 
+> **Note:** This demo video is from an earlier version of the app. The current version has more features and improvements, but I couldn't record a new video due to some issues in the app.
+
 ---
 
 ## ✨ Features
