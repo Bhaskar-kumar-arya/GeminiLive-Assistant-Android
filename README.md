@@ -18,6 +18,14 @@ The repository also includes:
 
 ---
 
+## 📺 Demo Video
+
+[![Watch the demo](https://img.youtube.com/vi/WVsYYJ--WXM/0.jpg)](https://youtube.com/shorts/WVsYYJ--WXM?si=b8UClQgCT83LuZvF)
+
+Or watch on [YouTube](https://youtube.com/shorts/WVsYYJ--WXM?si=b8UClQgCT83LuZvF).
+
+---
+
 ## ✨ Features
 
 - **Multimodal Chat**: Text and voice (WebRTC/PCM) with Gemini, including streaming responses
