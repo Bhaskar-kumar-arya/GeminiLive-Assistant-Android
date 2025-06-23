@@ -84,7 +84,7 @@ class GeminiAssistantService : Service(), WebRTCManager.AudioPlaybackListener {
     private lateinit var notificationManager: NotificationManager
 
     // Default configuration
-    private val defaultServerUrl = "ws://192.168.135.88:3001" // User updated
+    private val defaultServerUrl = "ws://192.168.134.88:3001" // User updated
     private fun getDefaultLiveConfig(): LiveConfig {
         // Dynamically generate FunctionDeclaration for all tools in toolExecutor
         val functionDeclarations = toolExecutor.tools.map { tool ->

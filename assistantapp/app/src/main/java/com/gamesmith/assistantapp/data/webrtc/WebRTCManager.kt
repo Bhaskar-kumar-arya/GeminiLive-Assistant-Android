@@ -12,6 +12,11 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import org.webrtc.DataChannel
+import javax.crypto.Mac
+import javax.crypto.spec.SecretKeySpec
+import java.security.InvalidKeyException
+import java.security.NoSuchAlgorithmException
+import java.util.Base64 // Requires API level 26 or higher, or use a compatibility library
 import org.webrtc.IceCandidate
 import org.webrtc.MediaConstraints
 import org.webrtc.MediaStream
@@ -51,7 +56,14 @@ class WebRTCManager @Inject constructor(
     private val MEDIA_STREAM_ID = "ARDAMS"
 
     private val iceServers = listOf(
-        PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer()
+        PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer(),
+        PeerConnection.IceServer.builder("stun:192.168.134.88:3478").createIceServer(),
+        PeerConnection.IceServer.builder("turn:192.168.134.88:3478?transport=udp")
+            .setTlsCertPolicy(PeerConnection.TlsCertPolicy.TLS_CERT_POLICY_INSECURE_NO_CHECK) // Use INSECURE_NO_CHECK for local testing without valid certs
+            .createIceServer(),
+        PeerConnection.IceServer.builder("turn:192.168.134.88:3478?transport=tcp")
+            .setTlsCertPolicy(PeerConnection.TlsCertPolicy.TLS_CERT_POLICY_INSECURE_NO_CHECK) // Use INSECURE_NO_CHECK for local testing without valid certs
+            .createIceServer()
     )
 
     var audioPlaybackListener: AudioPlaybackListener? = null
@@ -187,14 +199,53 @@ class WebRTCManager @Inject constructor(
         Log.d(TAG, "PeerConnectionFactory created.")
     }
 
+    private fun hmacSha1(value: String, key: String): String {
+        try {
+            val signingKey = SecretKeySpec(key.toByteArray(), "HmacSHA1")
+            val mac = Mac.getInstance("HmacSHA1")
+            mac.init(signingKey)
+            val rawHmac = mac.doFinal(value.toByteArray())
+            return Base64.getEncoder().encodeToString(rawHmac) // Use Base64 encoding
+        } catch (e: NoSuchAlgorithmException) {
+            Log.e(TAG, "HMAC-SHA1 algorithm not found: ${e.message}", e)
+        } catch (e: InvalidKeyException) {
+            Log.e(TAG, "Invalid key for HMAC-SHA1: ${e.message}", e)
+        }
+        return "" // Return empty string on error
+    }
+
     fun createPeerConnection() {
         if (peerConnectionFactory == null) {
             initializePeerConnectionFactory()
         }
-        val rtcConfig = PeerConnection.RTCConfiguration(iceServers)
-        
+
+        val turnUsername = "android_client_${System.currentTimeMillis() / 1000}" // Use timestamp as username
+        val turnPassword = hmacSha1("$turnUsername:gamesmith.com", "BhaskarArya979869") // Use username:realm and static-auth-secret
+
+        val iceServersWithAuth = iceServers.map { server ->
+            if (server.uri.startsWith("turn:")) {
+                PeerConnection.IceServer.builder(server.uri)
+                    .setUsername(turnUsername)
+                    .setPassword(turnPassword)
+                    .setTlsCertPolicy(server.tlsCertPolicy) // Keep the policy from the original server
+                    .createIceServer()
+            } else {
+                server
+            }
+        }
+
+        val rtcConfig = PeerConnection.RTCConfiguration(iceServersWithAuth).apply {
+            // Set the realm for TURN authentication
+            iceTransportsType = PeerConnection.IceTransportsType.ALL
+            bundlePolicy = PeerConnection.BundlePolicy.MAXBUNDLE
+            rtcpMuxPolicy = PeerConnection.RtcpMuxPolicy.REQUIRE
+            tcpCandidatePolicy = PeerConnection.TcpCandidatePolicy.ENABLED
+            candidateNetworkPolicy = PeerConnection.CandidateNetworkPolicy.ALL
+            // Add other necessary configurations
+        }
+
         // Close existing peer connection before creating a new one
-        peerConnection?.close() 
+        peerConnection?.close()
         Log.d(TAG, "Previous PeerConnection closed if it existed.")
 
         peerConnection = peerConnectionFactory?.createPeerConnection(rtcConfig, peerConnectionObserver)

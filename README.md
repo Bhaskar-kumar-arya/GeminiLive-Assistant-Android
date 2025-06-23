@@ -143,13 +143,54 @@ DOCS_Optimized/              # Detailed docs, integration guides
 - You must configure the IP address in two places:
   - `GeminiAssistantService.kt` (see `defaultServerUrl`)
   - `network_security_config.xml` (add your server's IP/domain)
+- Client-side configuration for TURN/STUN servers has been successfully implemented in `assistantapp/app/src/main/java/com/gamesmith/assistantapp/data/webrtc/WebRTCManager.kt` to improve connection reliability, especially in NAT scenarios.
+- **Important Note on TURN/STUN Server IP:** If your TURN/STUN server is running on a local machine (like a WSL instance), its internal IP address (`192.168.134.88` in the setup summary) may change over time. If the IP changes, you will need to:
+    - Update the `coturn` server configuration (`/etc/turnserver.conf`) if it's bound to a specific internal IP.
+    - Update the TURN/STUN server URLs in the Android client's `WebRTCManager.kt` with the new IP address.
+    - Update any firewall or router port forwarding rules that use the old internal IP address.
 - The project is **not fully pre-configured for emulator use from scratch**. You may need to adjust network settings and permissions for emulator scenarios.
+
+---
+
+## ⚙️ TURN/STUN Server Setup
+
+For reliable WebRTC connections, especially across different networks or behind NAT, a TURN/STUN server is essential. This project has been configured to utilize a TURN/STUN server.
+
+Here's a summary of the setup process. For detailed steps, refer to the [`TURN_STUN_Setup_Summary.md`](TURN_STUN_Setup_Summary.md) document.
+
+1.  **Install coturn:** Install the `coturn` TURN/STUN server on a Linux-based system (like a WSL instance).
+2.  **Configure `turnserver.conf`:** Edit the main configuration file (`/etc/turnserver.conf`) to set the `realm` (e.g., `gamesmith.com`) and configure a `static-auth-secret`.
+3.  **Firewall Configuration:** Configure your firewall to allow incoming UDP and TCP traffic on port 3478 (and 5349 for TLS/DTLS) and forward these ports to the server's internal IP address.
+4.  **TLS/DTLS Configuration (Recommended):** Obtain and configure SSL/TLS certificates for secure connections.
+5.  **Manage the Service:** Use `sudo service coturn [status|start|stop|restart]` to manage the `coturn` background service.
+6.  **Client Integration:** The Android client (`WebRTCManager.kt`) has been updated to use the configured TURN/STUN server URLs and authentication mechanism. Ensure the IP addresses in the client match your server's reachable IP.
+
+**Important Note on Server IP:** If your TURN/STUN server is running on a local machine (like a WSL instance), its internal IP address may change over time. If the IP changes, you will need to update the server configuration, the client's `WebRTCManager.kt`, and any firewall/router rules accordingly.
+
+---
+
+## ⚙️ TURN/STUN Server Configuration
+
+For reliable WebRTC connections, especially when clients are behind different types of NAT or firewalls, a TURN/STUN server is essential. This project's Android client is configured to utilize a TURN/STUN server to help establish peer-to-peer connections.
+
+To configure the client to use your TURN/STUN server:
+
+1.  Locate the `iceServers` list in the [`WebRTCManager.kt`](assistantapp/app/src/main/java/com/gamesmith/assistantapp/data/webrtc/WebRTCManager.kt) file.
+2.  Update the `stun:` and `turn:` URLs in this list to point to your TURN/STUN server's public IP address and ports.
+3.  If your TURN server requires authentication (like `coturn` with `static-auth-secret`), you will also need to configure the username and password generation logic within the `createPeerConnection` function in `WebRTCManager.kt` to match your server's requirements. The current implementation includes logic for `coturn`'s static authentication using a timestamp and HMAC-SHA1, but the IP address (`192.168.134.88`) is currently hardcoded. You should replace this with your server's IP and ensure the authentication logic matches your server setup.
+
+You have a few options for obtaining a TURN/STUN server:
+
+*   **Set up your own:** You can install and configure a server like `coturn` on your own infrastructure (e.g., a cloud server, a local machine with port forwarding). Refer to the `coturn` documentation or online guides for detailed setup instructions. The [`TURN_STUN_Setup_Summary.md`](TURN_STUN_Setup_Summary.md) document in this repository provides a summary of the steps taken for a local WSL setup, which might be helpful for context, but does not contain comprehensive setup instructions.
+*   **Use a public server:** There are some public STUN servers available (e.g., `stun.l.google.com:19302`), but public TURN servers are less common and often require authentication or are part of commercial services.
+
+Ensure the IP addresses and ports configured in the client's `WebRTCManager.kt` are reachable by the Android device.
 
 ---
 
 ## 🐞 Known Issues
 
-- Sometimes, the connection between the server and client isn't properly established, which can cause microphone failure on the Android device. This is likely related to WebRTC connection setup. If you encounter this, try restarting the app and server, and ensure both are on the same network.
+- issues related to webRTC has been fixed by setting up STUN/TURN server.
 - **Gemini Live API Limitation:** When running tool/function calls asynchronously, the Gemini Live API is unable to reliably execute sequential function calls. It may execute a single call more than once, and does not relate the result of one function call to another. This is a limitation of the Gemini API itself, not of this implementation(correct me if i am wrong).
 
 ---

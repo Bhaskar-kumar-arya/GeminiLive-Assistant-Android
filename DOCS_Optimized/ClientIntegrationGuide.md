@@ -402,9 +402,9 @@ Client sends:
 *   **Resource Management**: Clean up resources (e.g., audio players/recorders, WebRTC connections) on disconnection or errors.
 *   **Idempotency & Retries**: Consider strategies if network issues cause uncertainty about message delivery, though the Live API is stream-oriented.
 *   **Message Size Limits**: Be aware of potential WebSocket message size limits if sending very large image data directly; chunking or alternative methods might be needed for extremely large assets (though `inlineData` is common for typical images).
+    *   **[2024-06] Update:** Client-side configuration for TURN/STUN servers has been successfully implemented in the Android client (`WebRTCManager.kt`) to improve connection reliability, especially in NAT scenarios.
 
-This guide should provide a solid foundation for integrating with the Gemini Live API Server. Always refer to the latest server-side and Gemini API documentation for any updates to protocols or data structures. 
-
+This guide should provide a solid foundation for integrating with the Gemini Live API Server. Always refer to the latest server-side and Gemini API documentation for any updates to protocols or data structures.
 #### Overlay Status Handling
 - When the client receives `ASSISTANT_SPEAKING`, it should update the status overlay to 'Gemini is speaking...'.
 - When the client receives `TURN_COMPLETE` or `INTERRUPTED`, it should update the status overlay to 'Gemini is listening...'.

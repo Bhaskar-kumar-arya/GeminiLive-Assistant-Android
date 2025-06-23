@@ -106,6 +106,7 @@ This document outlines the architecture, current development status, capabilitie
     *   Unified voice session control in UI (single button for WebRTC & mic).
     *   Speakerphone audio routing for WebRTC calls.
     *   Stopping the session now fully releases all WebRTC and microphone resources, ensuring the Android mic indicator (green dot) disappears immediately.
+    *   **[2024-06] Update:** Client-side configuration for TURN/STUN servers has been successfully implemented in `WebRTCManager.kt` to improve connection reliability, especially in NAT scenarios.
 *   **Turn Management & Interruption**:
     *   Basic handling of `INTERRUPTED` and `TURN_COMPLETE` server signals.
     *   Client-side audio playback stops on interruption.
@@ -224,6 +225,7 @@ This document outlines the architecture, current development status, capabilitie
                 *   *Note: The service initializes `WebRTCManager`, which is responsible for receiving and playing the remote audio track via WebRTC. User confirms hearing Gemini, so this path is functional.*
             *   [x] **2.3.3. WebRTC Signaling via Service**: Ensure `WEBRTC_OFFER`, `WEBRTC_ANSWER`, `WEBRTC_ICE_CANDIDATE` messages are sent/received via the `GeminiWebSocketClient` instance owned by the service.
                 *   *Note: Signaling messages (offers, answers, ICE candidates) are handled correctly, enabling the WebRTC session. Outgoing messages via `WebRTCManager` and incoming messages via `geminiRepository.observeServerMessages()` are functional.*
+                *   *Note: Client-side TURN/STUN configuration has been successfully implemented in `WebRTCManager.kt` to enhance WebRTC connection reliability.*
         *   [ ] **2.4. WebSocket Audio Playback (`AudioPlayer` in Service)**:
             *   Integrate `AudioPlayer` to handle `AUDIO_CHUNK` messages from the server (Gemini's voice via WebSocket path) and play them.
             *   Ensure thread-safe audio queueing and playback managed by the service.
