@@ -49,6 +49,7 @@ import android.os.Looper
 import com.gamesmith.assistantapp.data.model.Content
 import com.gamesmith.assistantapp.data.model.FunctionDeclaration
 import com.gamesmith.assistantapp.data.model.FunctionParameters
+import com.gamesmith.assistantapp.data.model.ImageGenerationResultPayload
 import com.gamesmith.assistantapp.data.model.Part
 import com.gamesmith.assistantapp.data.model.Tool
 import kotlinx.serialization.json.booleanOrNull
@@ -298,6 +299,83 @@ class GeminiAssistantService : Service(), WebRTCManager.AudioPlaybackListener {
                         } else {
                             updateNotification("Setup Failed: "+(payload?.setupComplete?.error?.message ?: "Unknown reason"))
                             _isGeminiSetupComplete.value = false
+                        }
+                    }
+                    MessageTypes.IMAGE_GENERATION_RESULT -> {
+                        val payload = messageWrapper.payload as? ImageGenerationResultPayload
+                        if (payload != null && payload.success == true && payload.imageData != null) {
+                            Log.d("GeminiAssistantService", "Received IMAGE_GENERATION_RESULT with image data.")
+                            // Save the image data to the gallery
+                            serviceScope.launch(Dispatchers.IO) { // Use IO dispatcher for file operations
+                                try {
+                                    val imageBytes = android.util.Base64.decode(payload.imageData, android.util.Base64.NO_WRAP)
+                                    val fileName = "generated-image-${System.currentTimeMillis()}.png"
+                                    val mimeType = "image/png" // Assuming PNG, adjust if necessary
+
+                                    val contentValues = android.content.ContentValues().apply {
+                                        put(android.provider.MediaStore.Images.Media.DISPLAY_NAME, fileName)
+                                        put(android.provider.MediaStore.Images.Media.MIME_TYPE, mimeType)
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                                            put(android.provider.MediaStore.Images.Media.RELATIVE_PATH, android.os.Environment.DIRECTORY_PICTURES)
+                                        }
+                                    }
+
+                                    val resolver = applicationContext.contentResolver
+                                    val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                                        android.provider.MediaStore.Images.Media.getContentUri(android.provider.MediaStore.VOLUME_EXTERNAL_PRIMARY)
+                                    } else {
+                                        android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                                    }
+
+                                    val imageUri = resolver.insert(collection, contentValues)
+
+                                    if (imageUri != null) {
+                                        resolver.openOutputStream(imageUri)?.use { outputStream ->
+                                            outputStream.write(imageBytes)
+                                        }
+                                        Log.d("GeminiAssistantService", "Image saved to gallery: $imageUri")
+
+                                        // Create a new payload with the gallery URI and success status
+                                        val resultPayloadWithGalleryUri = ImageGenerationResultPayload(
+                                            imageUrl = imageUri.toString(), // Send the gallery URI back in the payload
+                                            success = true,
+                                            error = null
+                                        )
+
+                                        // Call the repository function to handle the result and send to the channel
+                                        geminiRepository.handleImageGenerationResult(resultPayloadWithGalleryUri)
+
+                                    } else {
+                                        Log.e("GeminiAssistantService", "Failed to create new MediaStore entry for image.")
+                                         val errorPayload = ImageGenerationResultPayload(
+                                             success = false,
+                                             error = "Client failed to create MediaStore entry."
+                                         )
+                                         geminiRepository.handleImageGenerationResult(errorPayload)
+                                    }
+
+                                } catch (e: Exception) {
+                                    Log.e("GeminiAssistantService", "Error saving image to gallery: ${e.message}", e)
+                                    // Send an error result back through the channel
+                                    val errorPayload = ImageGenerationResultPayload(
+                                        success = false,
+                                        error = "Client error saving image to gallery: ${e.message}"
+                                    )
+                                    geminiRepository.handleImageGenerationResult(errorPayload)
+                                }
+                            }
+                        } else if (payload != null && payload.success == false) {
+                             Log.e("GeminiAssistantService", "Received IMAGE_GENERATION_RESULT with server error: ${payload.error}")
+                             // Pass the server error back through the channel
+                             geminiRepository.handleImageGenerationResult(payload)
+                        } else {
+                            Log.e("GeminiAssistantService", "Received IMAGE_GENERATION_RESULT with invalid payload.")
+                             // Send a generic client error back through the channel
+                             val errorPayload = ImageGenerationResultPayload(
+                                 success = false,
+                                 error = "Client received invalid image generation result payload."
+                             )
+                             geminiRepository.handleImageGenerationResult(errorPayload)
                         }
                     }
                     MessageTypes.GEMINI_CONNECTED -> {

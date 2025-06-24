@@ -1,9 +1,11 @@
 package com.gamesmith.assistantapp.di
 
+import com.gamesmith.assistantapp.data.remote.GeminiRepository
 import com.gamesmith.assistantapp.domain.tool.CreateCanvasTool
 import com.gamesmith.assistantapp.domain.tool.AppendToCanvasTool
 import com.gamesmith.assistantapp.domain.tool.NativeTool
 import com.gamesmith.assistantapp.domain.tool.FindContactTool
+import com.gamesmith.assistantapp.domain.tool.GenerateImageTool
 import com.gamesmith.assistantapp.domain.tool.TakePhotoTool
 import com.gamesmith.assistantapp.domain.tool.SendMessageTool
 import com.gamesmith.assistantapp.service.ToolUIManager
@@ -75,6 +77,10 @@ abstract class ServiceToolModule {
 
         @Provides
         @ServiceScoped
+        fun provideGenerateImageTool(geminiRepository: GeminiRepository): GenerateImageTool = GenerateImageTool(geminiRepository) // Provide GenerateImageTool with injected dependency
+
+        @Provides
+        @ServiceScoped
         fun provideToolExecutor(tools: Set<@JvmSuppressWildcards NativeTool>): com.gamesmith.assistantapp.domain.tool.ToolExecutor = com.gamesmith.assistantapp.domain.tool.ToolExecutor(tools)
     }
-} 
+}

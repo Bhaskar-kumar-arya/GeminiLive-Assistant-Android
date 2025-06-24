@@ -91,3 +91,9 @@ data class ActivityStart(val dummy: String = "")
 @Serializable
 // Placeholder for protocol compatibility
 data class ActivityEnd(val dummy: String = "") 
+@Serializable
+data class GenerateImagePayload(
+    val text: String,
+    val imageUri: String? = null // Optional URI for input image
+)
+

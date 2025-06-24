@@ -25,12 +25,18 @@ import com.gamesmith.assistantapp.data.webrtc.WebRTCManager
 import com.gamesmith.assistantapp.data.remote.ServerMessageEnvelope
 import com.gamesmith.assistantapp.data.remote.WebRTCAnswerSdp
 import com.gamesmith.assistantapp.data.remote.WebRTCIceCandidateContainer
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.channels.Channel // Import Channel
+import com.gamesmith.assistantapp.data.model.ImageGenerationResultPayload // Import ImageGenerationResultPayload
 
 class GeminiRepositoryImpl @Inject constructor(
     private val webSocketClient: GeminiWebSocketClient,
     private val json: Json,
     private val webRTCManager: WebRTCManager
 ) : GeminiRepository {
+
+    // Channel to bridge image generation results back to the suspending function
+    private val imageGenerationResultChannel = Channel<ImageGenerationResultPayload>(Channel.BUFFERED)
 
     override fun connect(serverUrl: String, config: LiveConfig) {
         webSocketClient.connect(serverUrl, config)
@@ -122,47 +128,57 @@ class GeminiRepositoryImpl @Inject constructor(
                 // Deserialize the payload based on the message type for other messages
                 val payload: ServerMessagePayload? = when (messageType) {
                     MessageTypes.GEMINI_CONNECTED -> null // No payload
-                    MessageTypes.GEMINI_DISCONNECTED -> payloadJsonElement?.let { 
-                        json.decodeFromJsonElement(GeminiDisconnectedPayload.serializer(), it) 
+                    MessageTypes.GEMINI_DISCONNECTED -> payloadJsonElement?.let {
+                        json.decodeFromJsonElement(GeminiDisconnectedPayload.serializer(), it)
                     }
-                    MessageTypes.GEMINI_ERROR -> payloadJsonElement?.let { 
-                        json.decodeFromJsonElement(GeminiErrorPayload.serializer(), it) 
+                    MessageTypes.GEMINI_ERROR -> payloadJsonElement?.let {
+                        json.decodeFromJsonElement(GeminiErrorPayload.serializer(), it)
                     }
-                    MessageTypes.CONTENT_MESSAGE -> payloadJsonElement?.let { 
-                        json.decodeFromJsonElement(ContentMessagePayload.serializer(), it) 
+                    MessageTypes.CONTENT_MESSAGE -> payloadJsonElement?.let {
+                        json.decodeFromJsonElement(ContentMessagePayload.serializer(), it)
                     }
-                    MessageTypes.TOOL_CALL -> payloadJsonElement?.let { 
-                        json.decodeFromJsonElement(ToolCallMessagePayload.serializer(), it) 
+                    MessageTypes.TOOL_CALL -> payloadJsonElement?.let {
+                        json.decodeFromJsonElement(ToolCallMessagePayload.serializer(), it)
                     }
-                    MessageTypes.TOOL_CALL_CANCELLATION -> payloadJsonElement?.let { 
-                        json.decodeFromJsonElement(ToolCallCancellationMessagePayload.serializer(), it) 
+                    MessageTypes.TOOL_CALL_CANCELLATION -> payloadJsonElement?.let {
+                        json.decodeFromJsonElement(ToolCallCancellationMessagePayload.serializer(), it)
                     }
-                    MessageTypes.SETUP_COMPLETE -> payloadJsonElement?.let { 
-                        json.decodeFromJsonElement(SetupCompleteMessagePayload.serializer(), it) 
+                    MessageTypes.SETUP_COMPLETE -> payloadJsonElement?.let {
+                        json.decodeFromJsonElement(SetupCompleteMessagePayload.serializer(), it)
                     }
-                    MessageTypes.INTERRUPTED -> payloadJsonElement?.let { 
-                        json.decodeFromJsonElement(InterruptedPayload.serializer(), it) 
+                    MessageTypes.INTERRUPTED -> payloadJsonElement?.let {
+                        json.decodeFromJsonElement(InterruptedPayload.serializer(), it)
                     }
-                    MessageTypes.TURN_COMPLETE -> payloadJsonElement?.let { 
-                        json.decodeFromJsonElement(TurnCompletePayload.serializer(), it) 
+                    MessageTypes.TURN_COMPLETE -> payloadJsonElement?.let {
+                        json.decodeFromJsonElement(TurnCompletePayload.serializer(), it)
                     }
-                    MessageTypes.AUDIO_CHUNK -> payloadJsonElement?.let { 
-                        json.decodeFromJsonElement(AudioChunkPayload.serializer(), it) 
+                    MessageTypes.AUDIO_CHUNK -> payloadJsonElement?.let {
+                        json.decodeFromJsonElement(AudioChunkPayload.serializer(), it)
                     }
-                    MessageTypes.LOG_MESSAGE -> payloadJsonElement?.let { 
-                        json.decodeFromJsonElement(LogMessagePayload.serializer(), it) 
+                    MessageTypes.LOG_MESSAGE -> payloadJsonElement?.let {
+                        json.decodeFromJsonElement(LogMessagePayload.serializer(), it)
+                    }
+                    MessageTypes.IMAGE_GENERATION_RESULT -> payloadJsonElement?.let {
+                        json.decodeFromJsonElement(ImageGenerationResultPayload.serializer(), it)
                     }
                     else -> {
                         println("Unknown message type: $messageType")
                         null
                     }
                 }
-                
-                ServerMessageWrapper(type = messageType, payload = payload)
+
+                // If the payload was successfully deserialized, emit the wrapper
+                if (payload != null) {
+                    ServerMessageWrapper(type = messageType, payload = payload)
+                } else {
+                    // If payload is null (either unknown type or deserialization failed),
+                    // don't emit anything to the main flow
+                    null
+                }
             } catch (e: Exception) {
-                // Log error or handle deserialization exception
-                println("Error deserializing server message: ${e.message}, raw: $rawJson")
-                null // Or emit an error state/message
+                // This catch block handles errors during the initial envelope parsing or other unexpected issues
+                println("Error processing raw server message: ${e.message}, raw: $rawJson")
+                null // Filter out messages that cause processing errors
             }
         }
     }
@@ -218,4 +234,44 @@ class GeminiRepositoryImpl @Inject constructor(
     override suspend fun sendRealtimeTextInput(jsonText: String) {
         sendRealtimeInput(text = jsonText, audio = null, video = null, activityStart = null, activityEnd = null, audioStreamEnd = null)
     }
-} 
+
+    override suspend fun generateImage(text: String, imageUri: String?): Result<String> {
+        val payload = GenerateImagePayload(text = text, imageUri = imageUri)
+        val wrapper = ClientMessageWrapper(
+            type = MessageTypes.GENERATE_IMAGE,
+            payload = json.encodeToJsonElement(payload)
+        )
+        try {
+            val jsonMessage = json.encodeToString(wrapper)
+            webSocketClient.sendMessage(jsonMessage)
+
+            // Wait for the image generation result with a timeout
+            val resultPayload: ImageGenerationResultPayload? = withTimeoutOrNull(30000L) { // Timeout after 30 seconds
+                imageGenerationResultChannel.receive()
+            }
+
+            return if (resultPayload != null) {
+                if (resultPayload.success == true && resultPayload.imageUrl != null) { // Use safe access for success
+                    Result.success(resultPayload.imageUrl)
+                } else {
+                    Result.failure(RuntimeException(resultPayload.error ?: "Image generation failed"))
+                }
+            } else {
+                Result.failure(RuntimeException("Image generation request timed out or no result received."))
+            }
+
+        } catch (e: Exception) {
+            println("Error sending GENERATE_IMAGE or receiving result: ${e.message}")
+            return Result.failure(e)
+        }
+    }
+
+    override suspend fun handleImageGenerationResult(payload: ImageGenerationResultPayload) {
+        try {
+            imageGenerationResultChannel.send(payload)
+            println("Sent ImageGenerationResultPayload to channel from handleImageGenerationResult.")
+        } catch (e: Exception) {
+            println("Error sending ImageGenerationResultPayload to channel from handleImageGenerationResult: ${e.message}")
+        }
+    }
+}

@@ -1,5 +1,7 @@
 package com.gamesmith.assistantapp.di
 
+import com.gamesmith.assistantapp.data.remote.GeminiRepository
+import com.gamesmith.assistantapp.domain.tool.GenerateImageTool
 import com.gamesmith.assistantapp.domain.tool.GetCurrentTimeTool
 import com.gamesmith.assistantapp.domain.tool.NativeTool
 import com.gamesmith.assistantapp.domain.tool.TestTool
@@ -22,6 +24,10 @@ abstract class ToolModule {
     @IntoSet
     abstract fun bindTestTool(tool: TestTool): NativeTool
 
+    @Binds
+    @IntoSet
+    abstract fun bindGenerateImageTool(tool: GenerateImageTool): NativeTool
+
     companion object {
         @Provides
         @Singleton
@@ -30,5 +36,9 @@ abstract class ToolModule {
         @Provides
         @Singleton
         fun provideTestTool(): TestTool = TestTool()
+
+        @Provides
+        @Singleton
+        fun provideGenerateImageTool(geminiRepository: GeminiRepository): GenerateImageTool = GenerateImageTool(geminiRepository) // Provide GenerateImageTool with injected dependency
     }
-} 
+}

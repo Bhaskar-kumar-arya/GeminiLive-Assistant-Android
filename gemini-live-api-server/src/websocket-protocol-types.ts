@@ -43,6 +43,11 @@ export interface SendToolResponsePayload {
   };
 }
 
+export interface GenerateImagePayload {
+  text: string;
+  imageUri?: string; // Optional URI for input image
+}
+
 // --- WebRTC Signaling Payloads ---
 export interface RTCIceCandidateJson {
   sdpMid: string | null;
@@ -107,6 +112,11 @@ export interface WebRTCIceCandidateClientMessage {
   payload: WebRTCIceCandidatePayload;
 }
 
+export interface GenerateImageClientMessage {
+  type: "GENERATE_IMAGE"; // New message type for image generation request
+  payload: GenerateImagePayload;
+}
+
 // --- Union Type for All Client -> Server Messages ---
 
 export type ClientToServerMessage =
@@ -117,7 +127,8 @@ export type ClientToServerMessage =
   | UpdateConfigClientMessage
   | DisconnectGeminiClientMessage
   | WebRTCOfferClientMessage
-  | WebRTCIceCandidateClientMessage;
+  | WebRTCIceCandidateClientMessage
+  | GenerateImageClientMessage; // Added for image generation
 
 // --------------------------------------------------------------------------------
 // Server -> Client App Message Types
@@ -137,6 +148,13 @@ export interface GeminiErrorPayload {
 export interface AudioChunkPayload {
   /** Audio data, typically base64 encoded string if sent over JSON, or ArrayBuffer if binary is used. */
   data: ArrayBuffer | string;
+}
+
+export interface ImageGenerationResultPayload {
+  success: boolean;
+  imageUrl?: string; // URI of the generated image on the server
+  imageData?: string; // Base64 encoded image data
+  error?: string;
 }
 
 // For CONTENT_MESSAGE, payload is ServerContentMessage
@@ -204,6 +222,11 @@ export interface AudioChunkServerMessage {
   payload: AudioChunkPayload;
 }
 
+export interface ImageGenerationResultServerMessage {
+  type: "IMAGE_GENERATION_RESULT"; // New message type for image generation result
+  payload: ImageGenerationResultPayload;
+}
+
 // --- WebRTC Signaling Server Messages ---
 export interface WebRTCAnswerServerMessage {
   type: "WEBRTC_ANSWER";
@@ -230,4 +253,5 @@ export type ServerToClientMessage =
   | LogMessageServerMessage
   | AudioChunkServerMessage
   | WebRTCAnswerServerMessage
-  | WebRTCIceCandidateServerMessage; 
+  | WebRTCIceCandidateServerMessage
+  | ImageGenerationResultServerMessage; // Added for image generation result

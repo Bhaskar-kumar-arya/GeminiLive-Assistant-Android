@@ -1,6 +1,7 @@
 package com.gamesmith.assistantapp.data.remote
 
 import com.gamesmith.assistantapp.data.model.ClientMessageWrapper
+import com.gamesmith.assistantapp.data.model.ImageGenerationResultPayload
 import com.gamesmith.assistantapp.data.model.LiveConfig
 import com.gamesmith.assistantapp.data.model.ServerMessageWrapper
 import kotlinx.coroutines.flow.Flow
@@ -24,4 +25,6 @@ interface GeminiRepository {
         activityEnd: com.gamesmith.assistantapp.data.model.ActivityEnd? = null,
         audioStreamEnd: Boolean? = null
     )
-} 
+    suspend fun generateImage(text: String, imageUri: String?): Result<String> // Added for image generation
+    suspend fun handleImageGenerationResult(payload: ImageGenerationResultPayload)
+}

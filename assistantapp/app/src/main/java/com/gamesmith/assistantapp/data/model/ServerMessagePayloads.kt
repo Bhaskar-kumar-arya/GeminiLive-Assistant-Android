@@ -94,3 +94,11 @@ data class LogMessagePayload(
 data class AssistantSpeakingPayload(
     val speaking: Boolean = true // Always true for this message
 ) : ServerMessagePayload
+
+@Serializable
+data class ImageGenerationResultPayload(
+    val imageUrl: String? = null, // Server might still send this, or it could be removed
+    val imageData: String? = null, // Add field for Base64 encoded image data
+    val success: Boolean? = null,
+    val error: String? = null
+) : ServerMessagePayload

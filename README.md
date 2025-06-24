@@ -31,7 +31,7 @@ Or watch on [YouTube](https://youtube.com/shorts/WVsYYJ--WXM?si=b8UClQgCT83LuZvF
 ## ✨ Features
 
 - **Multimodal Chat**: Text and voice (WebRTC/PCM) with Gemini, including streaming responses
-- **Tool Calling**: Gemini can call device-native or UI tools (e.g., take photo, show canvas, send message)
+- **Tool Calling**: Gemini can call device-native or UI tools (e.g., take photo, show canvas, send message to a person,generateImages (uses gemini 2.0 flash image generation model in a tool))
 - **Schema-Driven Overlays**: Canvas/tool overlays are defined by compact JSON schemas, supporting text, images, inputs, buttons, and Google Search Suggestion chips
 - **Service-Centric Android App**: All session logic runs in a background service (`GeminiAssistantService`), with persistent notification and overlay UI
 - **SOLID & DI**: Fully modular, Hilt-powered dependency injection

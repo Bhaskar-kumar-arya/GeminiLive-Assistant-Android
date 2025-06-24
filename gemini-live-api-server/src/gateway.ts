@@ -16,9 +16,11 @@ import type {
     ToolCall,
     ToolCallCancellation,
 } from './gemini-client/multimodal-live-types';
-import type {
+import { // Changed from import type
     ClientToServerMessage,
     ServerToClientMessage,
+    GenerateImagePayload, // Import GenerateImagePayload
+    ImageGenerationResultPayload, // Import ImageGenerationResultPayload
     ConnectGeminiPayload,
     SendMessagePayload,
     SendRealtimeInputPayload,
@@ -31,8 +33,10 @@ import type {
     WebRTCIceCandidatePayload, // Added for WebRTC
     RTCIceCandidateJson, // Added for WebRTC
 } from './websocket-protocol-types';
+import { generateImage } from './image-generator'; // Import generateImage function
 import chalk from 'chalk';
 import path from 'path';
+import * as fs from 'fs/promises'; // Import Node.js file system module
 // Attempt to access RTCAudioSink via the main wrtc object
 const RTCAudioSink = (wrtc as any).nonstandard?.RTCAudioSink;
 const RTCAudioSource = (wrtc as any).nonstandard?.RTCAudioSource; // Added for sending audio
@@ -107,7 +111,7 @@ export function handleConnection(ws: WebSocket) {
     let audioSink: any = null; 
 
     ws.on('message', async (messageData: WebSocket.Data) => {
-        const message = safeJsonParse(messageData);
+        const message: ClientToServerMessage | null = safeJsonParse(messageData); // Explicitly type message
         if (!message) {
             ws.send(JSON.stringify({ type: 'GEMINI_ERROR', payload: { message: 'Invalid JSON message received.' } } as ServerToClientMessage));
             return;
@@ -581,6 +585,43 @@ export function handleConnection(ws: WebSocket) {
                         const payload: GeminiErrorPayload = { message: 'Error processing WebRTC offer.', details: error.message };
                         ws.send(JSON.stringify({ type: 'GEMINI_ERROR', payload } as ServerToClientMessage));
                     }
+                    break;
+
+                case 'GENERATE_IMAGE': // Handle image generation request
+                    console.log(`[${clientId}] Received GENERATE_IMAGE request.`);
+                    const generateImagePayload = message.payload as GenerateImagePayload;
+                    
+                    // Call the image generation function
+                    const imageResult = await generateImage(
+                        generateImagePayload.text,
+                        generateImagePayload.imageUri
+                    );
+
+                    // Send the result back to the client
+                    // Read the generated image file and encode it as Base64
+                    let imageDataBase64: string | undefined;
+                    if (imageResult.success && imageResult.imageUrl) {
+                        try {
+                            // Construct the full server-side path
+                            const imageFilePath = path.join(__dirname, imageResult.imageUrl); // Assumes imageUrl is relative to src/
+                            const imageBuffer = await fs.readFile(imageFilePath);
+                            imageDataBase64 = imageBuffer.toString('base64');
+                            console.log(`[${clientId}] Read and Base64 encoded image from ${imageFilePath}`);
+                        } catch (fileError) {
+                            console.error(`[${clientId}] Error reading image file ${imageResult.imageUrl}:`, fileError);
+                            // Continue without image data, send error in payload if possible
+                        }
+                    }
+
+                    const imageResultPayload: ImageGenerationResultPayload = {
+                        // Include original success/error and imageUrl
+                        ...imageResult,
+                        // Add the Base64 encoded image data if available
+                        imageData: imageDataBase64
+                    };
+
+                    ws.send(JSON.stringify({ type: 'IMAGE_GENERATION_RESULT', payload: imageResultPayload } as ServerToClientMessage));
+                    console.log(`[${clientId}] Sent IMAGE_GENERATION_RESULT to client (with${imageDataBase64 ? '' : 'out'} image data).`);
                     break;
 
                 case 'WEBRTC_ICE_CANDIDATE':

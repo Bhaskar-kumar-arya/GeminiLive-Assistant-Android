@@ -120,6 +120,7 @@ Disconnection:
 | `LOG_MESSAGE`            | `LogMessagePayload`                             | Server-side log message (e.g., for debugging).                           |
 | `ASSISTANT_SPEAKING`     | `{ "speaking": true }`                         | Indicates Gemini is actively speaking (audio is playing). Client should update overlay to 'Gemini is speaking...'. |
 | `groundingMetadata`      | `{ "groundingMetadata"?: object }`             | (Optional) Contains Google Search Suggestion chip info.                 |
+| `IMAGE_GENERATION_RESULT`| `ImageGenerationResultPayload`                  | Result of the `generate_image_tool` request. Contains `imageUrl` (local file URI) and `imageData` (Base64 encoded). |
 
 ## 3. Core Data Structures
 
@@ -301,10 +302,30 @@ interface GenerativeContentBlob {
     ```
     *Sent by both client and server.*
 
-*   **SDP Offer/Answer (payload for `WEBRTC_OFFER` / `WEBRTC_ANSWER`)**:
-    `{ "sdp": String }` (String containing the SDP)
+### 3.5. Server -> Client Message Payloads (Detailed)
+
+*   **`ServerContent` (within `CONTENT_MESSAGE` payload)**:
+    ```typescript
+
+*   **`ImageGenerationResultPayload` (payload of `IMAGE_GENERATION_RESULT`)**:
+    ```typescript
+    interface ImageGenerationResultPayload {
+      success: boolean;
+      imageUrl?: string; // URI or base64 data of the generated image
+      error?: string;
+    }
+    ```
+    The `imageUrl` in the `response` is the server-side URI of the generated image.
+
+*   **`SetupCompleteDetails` (payload of `SETUP_COMPLETE`)**:
 
 ## 4. Common Operations Examples
+
+As well as:
+
+   *   payload is the local file URI for the generated image
+
+*   **`SetupCompleteDetails` (payload of `SETUP_COMPLETE`)**:
 
 (Refer to `GeminiLiveAPIServer_Overview.md` or specific client SDKs for more detailed examples of operations like sending messages, handling audio, etc.)
 

@@ -8,8 +8,9 @@ object MessageTypes {
     const val SEND_TOOL_RESPONSE = "SEND_TOOL_RESPONSE"
     const val UPDATE_CONFIG = "UPDATE_CONFIG"
     const val DISCONNECT_GEMINI = "DISCONNECT_GEMINI"
-
+    const val GENERATE_IMAGE = "GENERATE_IMAGE" // Added for image generation request
     // Server -> Mobile App
+    const val IMAGE_GENERATION_RESULT = "IMAGE_GENERATION_RESULT"
     const val GEMINI_CONNECTED = "GEMINI_CONNECTED"
     const val GEMINI_DISCONNECTED = "GEMINI_DISCONNECTED"
     const val GEMINI_ERROR = "GEMINI_ERROR"

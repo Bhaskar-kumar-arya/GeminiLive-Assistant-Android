@@ -288,6 +288,13 @@ This document outlines the architecture, current development status, capabilitie
     *   Deprecated protocol fields (e.g., `chunks`) are no longer used; the implementation matches the latest Gemini API and SDK expectations.
     *   Placeholder data classes for `ActivityStart` and `ActivityEnd` are included for protocol compatibility.
     *   All code and DI errors were resolved during implementation.
+    *   The `generateImage` tool allows Gemini to generate images based on text prompts. The server sends the generated image data to the client as a Base64 encoded string. The client then saves the image to the device's photo gallery and responds to Gemini with the gallery URI.
+
+### Phase 5: UI/UX Refinement, Error Handling, Testing (Ongoing & Expanded)
+
+*   **Updated `ImageGenerationResultPayload`:**
+    *   Now includes `imageData` (Base64 encoded image data from server).
+    *   The client saves the image to the photo gallery and provides the local gallery URI as the tool response.
 
 ### Phase 5: UI/UX Refinement, Error Handling, Testing (Ongoing & Expanded)
 
