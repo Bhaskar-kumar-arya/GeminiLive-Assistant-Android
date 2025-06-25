@@ -8,7 +8,7 @@ if (!fs.existsSync(outputDir)){
     fs.mkdirSync(outputDir);
 }
 
-export async function generateImage(text: string, imageUri?: string): Promise<{ success: boolean; imageUrl?: string; error?: string }> {
+export async function generateImage(text: string, imageData?: string): Promise<{ success: boolean; imageUrl?: string; error?: string }> {
     const apiKey = process.env.GEMINI_API_KEY; // Access API key from environment
 
     if (!apiKey) {
@@ -20,24 +20,22 @@ export async function generateImage(text: string, imageUri?: string): Promise<{ 
 
     const contents: any[] = [{ text: text }];
 
-    if (imageUri) {
+    if (imageData) {
         try {
-            // Assuming imageUri is a local file path for now based on the sample.
-            // For a real application, you might need to handle different URI schemes (e.g., http, content://)
-            // and potentially download or access the image data differently.
-            const imagePath = path.resolve(imageUri); // Resolve path relative to server
-            const imageData = fs.readFileSync(imagePath);
-            const base64Image = imageData.toString("base64");
+            // The image data is already base64 encoded, received from the client.
+            // We need to determine the mime type. For now, assuming JPEG or PNG if not specified.
+            // A more robust solution might pass mimeType from the client as well.
+            const mimeType = "image/jpeg"; // Defaulting to JPEG, client should provide actual type if needed.
 
             contents.push({
                 inlineData: {
-                    mimeType: "image/png", // TODO: Determine mime type dynamically
-                    data: base64Image,
+                    mimeType: mimeType,
+                    data: imageData,
                 },
             });
         } catch (error: any) {
-            console.error(`Failed to read image from URI ${imageUri}:`, error);
-            return { success: false, error: `Failed to read input image: ${error.message}` };
+            console.error(`Failed to process input image data:`, error);
+            return { success: false, error: `Failed to process input image data: ${error.message}` };
         }
     }
 

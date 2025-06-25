@@ -1,6 +1,8 @@
 package com.gamesmith.assistantapp.domain.tool
 
 import android.content.Context
+import android.net.Uri
+import android.util.Base64
 import kotlinx.coroutines.CoroutineScope
 import com.gamesmith.assistantapp.data.model.ToolUiSchema
 import com.gamesmith.assistantapp.data.remote.GeminiRepository // Assuming interaction via repository
@@ -35,13 +37,27 @@ class GenerateImageTool(
         serviceScope: CoroutineScope
     ): ToolExecutionResult {
         val text = args["text"] as? String
-        val imageUri = args["imageUri"] as? String
+        val imageUriString = args["imageUri"] as? String
 
         if (text.isNullOrBlank()) {
             return ToolExecutionResult.Error("Missing required 'text' parameter for image generation.")
         }
-        // Call the generateImage function in the repository
-        val result = geminiRepository.generateImage(text, imageUri)
+
+        var imageData: String? = null
+        if (imageUriString != null) {
+            try {
+                val imageUri = Uri.parse(imageUriString)
+                serviceContext.contentResolver.openInputStream(imageUri)?.use { inputStream ->
+                    val bytes = inputStream.readBytes()
+                    imageData = Base64.encodeToString(bytes, Base64.NO_WRAP)
+                }
+            } catch (e: Exception) {
+                return ToolExecutionResult.Error("Failed to read image from URI: ${e.message}")
+            }
+        }
+
+        // Call the generateImage function in the repository with imageData
+        val result = geminiRepository.generateImage(text, imageData)
 
         return if (result.isSuccess) {
             val imageUrl = result.getOrNull()

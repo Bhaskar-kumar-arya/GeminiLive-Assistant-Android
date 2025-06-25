@@ -45,7 +45,7 @@ export interface SendToolResponsePayload {
 
 export interface GenerateImagePayload {
   text: string;
-  imageUri?: string; // Optional URI for input image
+  imageData?: string; // Optional Base64 encoded image data
 }
 
 // --- WebRTC Signaling Payloads ---

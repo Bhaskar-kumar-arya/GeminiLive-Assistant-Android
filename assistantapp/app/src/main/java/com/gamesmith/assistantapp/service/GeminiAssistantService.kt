@@ -119,6 +119,7 @@ class GeminiAssistantService : Service(), WebRTCManager.AudioPlaybackListener {
             systemInstruction = Content(listOf<Part>(Part("you are a helpful mobile assistant" +
                     ".Be concise when you speak,dont ask obvious questions to the user" +
                     ". make use of the tools you have been provided to help the user." +
+                    "carefully analyze user's requests , and understand the sequence of tools you need to execute analyzing the dependency of one tool over other , if applicable" +
                     " Dont try to be over technical to the user, unless asked." +
                     "you dont need to tell the internal state of the assistant to the user, unless asked." +
                     "DONT  RUN SAME TOOL MULTIPLE TIMES UNLESS ASKED." +

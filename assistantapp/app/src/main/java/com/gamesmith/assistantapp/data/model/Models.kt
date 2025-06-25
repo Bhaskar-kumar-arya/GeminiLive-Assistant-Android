@@ -94,6 +94,6 @@ data class ActivityEnd(val dummy: String = "")
 @Serializable
 data class GenerateImagePayload(
     val text: String,
-    val imageUri: String? = null // Optional URI for input image
+    val imageData: String? = null // Optional Base64 encoded image data
 )
 

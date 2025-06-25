@@ -235,8 +235,8 @@ class GeminiRepositoryImpl @Inject constructor(
         sendRealtimeInput(text = jsonText, audio = null, video = null, activityStart = null, activityEnd = null, audioStreamEnd = null)
     }
 
-    override suspend fun generateImage(text: String, imageUri: String?): Result<String> {
-        val payload = GenerateImagePayload(text = text, imageUri = imageUri)
+    override suspend fun generateImage(text: String, imageData: String?): Result<String> {
+        val payload = GenerateImagePayload(text = text, imageData = imageData)
         val wrapper = ClientMessageWrapper(
             type = MessageTypes.GENERATE_IMAGE,
             payload = json.encodeToJsonElement(payload)
@@ -246,7 +246,7 @@ class GeminiRepositoryImpl @Inject constructor(
             webSocketClient.sendMessage(jsonMessage)
 
             // Wait for the image generation result with a timeout
-            val resultPayload: ImageGenerationResultPayload? = withTimeoutOrNull(30000L) { // Timeout after 30 seconds
+            val resultPayload: ImageGenerationResultPayload? = withTimeoutOrNull(60000L) { // Timeout after 60 seconds
                 imageGenerationResultChannel.receive()
             }
 

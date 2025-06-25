@@ -25,6 +25,6 @@ interface GeminiRepository {
         activityEnd: com.gamesmith.assistantapp.data.model.ActivityEnd? = null,
         audioStreamEnd: Boolean? = null
     )
-    suspend fun generateImage(text: String, imageUri: String?): Result<String> // Added for image generation
+    suspend fun generateImage(text: String, imageData: String?): Result<String> // Added for image generation
     suspend fun handleImageGenerationResult(payload: ImageGenerationResultPayload)
 }

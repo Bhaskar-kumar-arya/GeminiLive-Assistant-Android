@@ -590,11 +590,11 @@ export function handleConnection(ws: WebSocket) {
                 case 'GENERATE_IMAGE': // Handle image generation request
                     console.log(`[${clientId}] Received GENERATE_IMAGE request.`);
                     const generateImagePayload = message.payload as GenerateImagePayload;
-                    
-                    // Call the image generation function
+
+                    // Call the image generation function, passing imageData instead of imageUri
                     const imageResult = await generateImage(
                         generateImagePayload.text,
-                        generateImagePayload.imageUri
+                        generateImagePayload.imageData
                     );
 
                     // Send the result back to the client

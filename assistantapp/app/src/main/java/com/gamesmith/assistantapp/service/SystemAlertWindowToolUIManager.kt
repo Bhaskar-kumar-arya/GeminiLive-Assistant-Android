@@ -1,6 +1,7 @@
 package com.gamesmith.assistantapp.service
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.PixelFormat
 import android.os.Build
 import android.os.Handler
@@ -28,6 +29,9 @@ import androidx.core.content.ContextCompat
 import android.graphics.drawable.GradientDrawable
 import android.widget.ImageButton
 import android.text.method.LinkMovementMethod
+import android.graphics.Matrix
+import androidx.exifinterface.media.ExifInterface
+import android.util.TypedValue
 
 @ServiceScoped
 class SystemAlertWindowToolUIManager @Inject constructor(
@@ -59,12 +63,12 @@ class SystemAlertWindowToolUIManager @Inject constructor(
             when (element) {
                 is ToolUiElement.Text -> {
                     val tv = TextView(context).apply {
-                        Log.d("ToolUIManager", "Raw text from Gemini for showToolUI: ${element.value}")
+                        val processedText = element.value.replace("\n", "<br>") // Replace \n with <br> for HTML rendering
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                            text = Html.fromHtml(element.value, Html.FROM_HTML_MODE_COMPACT)
+                            text = Html.fromHtml(processedText, Html.FROM_HTML_MODE_COMPACT)
                         } else {
                             @Suppress("DEPRECATION")
-                            text = Html.fromHtml(element.value)
+                            text = Html.fromHtml(processedText)
                         }
                         movementMethod = LinkMovementMethod.getInstance()
                         Log.d("ToolUIManager", "Formatted text for showToolUI: $text")
@@ -85,6 +89,21 @@ class SystemAlertWindowToolUIManager @Inject constructor(
                         } catch (e: Exception) {
                             Log.e("ToolUIManager", "Error decoding image: ${e.message}")
                         }
+                    } else if (element.src.startsWith("content://")) {
+                        // Handle content:// URIs (e.g., from FileProvider)
+                        try {
+                            val imageUri = android.net.Uri.parse(element.src)
+                            context.contentResolver.openInputStream(imageUri)?.use { inputStream ->
+                                val bmp = BitmapFactory.decodeStream(inputStream)
+                                iv.setImageBitmap(bmp)
+                            } ?: Log.e("ToolUIManager", "Could not open input stream for content URI: ${element.src}")
+                        } catch (e: Exception) {
+                            Log.e("ToolUIManager", "Error loading image from content URI: ${element.src}", e)
+                        }
+                    } else {
+                        // Fallback for general URLs (e.g., http/https) - requires an image loading library or custom implementation
+                        // For now, only data URIs and content URIs are explicitly supported for direct decoding.
+                        Log.w("ToolUIManager", "Unsupported image source (not data:image/ or content://): ${element.src}")
                     }
                     val params = android.widget.LinearLayout.LayoutParams(200, 200) // Consider making this configurable
                     params.setMargins(0, 8, 0, 8)
@@ -265,7 +284,7 @@ class SystemAlertWindowToolUIManager @Inject constructor(
                 }
                 background = bgDrawable
                 elevation = 16f
-                setPadding(40, 40, 40, 40)
+                setPadding(12, 12, 12, 12)
                 // Start hidden for entrance animation
                 alpha = 0f
                 scaleX = 0.92f
@@ -352,16 +371,17 @@ class SystemAlertWindowToolUIManager @Inject constructor(
             val view = when (element) {
                 is ToolUiElement.Text -> {
                     TextView(context).apply {
+                        val processedText = element.value.replace("\n", "<br>") // Replace \n with <br> for HTML rendering
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                            text = Html.fromHtml(element.value, Html.FROM_HTML_MODE_COMPACT)
+                            text = Html.fromHtml(processedText, Html.FROM_HTML_MODE_COMPACT)
                         } else {
                             @Suppress("DEPRECATION")
-                            text = Html.fromHtml(element.value)
+                            text = Html.fromHtml(processedText)
                         }
                         movementMethod = LinkMovementMethod.getInstance()
                         setTextColor(ContextCompat.getColor(context, R.color.canvas_text_light))
                         textSize = 17f
-                        setPadding(0, 12, 0, 12)
+                        setPadding(0, 8, 0, 8) // Adjusted vertical padding for text
                         if (animateElements) {
                             alpha = 0f
                             translationY = 32f
@@ -377,12 +397,70 @@ class SystemAlertWindowToolUIManager @Inject constructor(
                                 val bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
                                 setImageBitmap(bmp)
                             } catch (e: Exception) {
-                                Log.e("ToolUIManager", "Error decoding image: ", e)
+                                Log.e("ToolUIManager", "Error decoding base64 image: ", e)
                             }
+                        } else if (element.src.startsWith("content://")) {
+                            // Handle content:// URIs (e.g., from FileProvider)
+                            try {
+                                val imageUri = android.net.Uri.parse(element.src)
+                                context.contentResolver.openFileDescriptor(imageUri, "r")?.use { pfd ->
+                                    val originalBitmap = BitmapFactory.decodeFileDescriptor(pfd.fileDescriptor)
+
+                                    // Read EXIF orientation and apply rotation
+                                    val exif = ExifInterface(pfd.fileDescriptor)
+                                    val orientation = exif.getAttributeInt(
+                                        ExifInterface.TAG_ORIENTATION,
+                                        ExifInterface.ORIENTATION_NORMAL
+                                    )
+                                    val matrix = Matrix()
+                                    when (orientation) {
+                                        ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
+                                        ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
+                                        ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
+                                        ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.postScale(-1f, 1f)
+                                        ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.postScale(1f, -1f)
+                                        ExifInterface.ORIENTATION_TRANSPOSE -> { matrix.postRotate(90f); matrix.postScale(-1f, 1f) }
+                                        ExifInterface.ORIENTATION_TRANSVERSE -> { matrix.postRotate(-90f); matrix.postScale(-1f, 1f) }
+                                    }
+
+                                    val rotatedBitmap = if (!matrix.isIdentity) {
+                                        Bitmap.createBitmap(
+                                            originalBitmap,
+                                            0,
+                                            0,
+                                            originalBitmap.width,
+                                            originalBitmap.height,
+                                            matrix,
+                                            true
+                                        )
+                                    } else {
+                                        originalBitmap
+                                    }
+
+                                    setImageBitmap(rotatedBitmap)
+                                    if (originalBitmap != rotatedBitmap && !originalBitmap.isRecycled) {
+                                        originalBitmap.recycle() // Recycle original if a new one was created
+                                    }
+                                } ?: Log.e("ToolUIManager", "Could not open file descriptor for content URI: ${element.src}")
+                            } catch (e: Exception) {
+                                Log.e("ToolUIManager", "Error loading image from content URI: ${element.src}", e)
+                            }
+                        } else {
+                            // Fallback for general URLs (e.g., http/https) - requires an image loading library or custom implementation
+                            // For now, only data URIs and content URIs are explicitly supported for direct decoding.
+                            Log.w("ToolUIManager", "Unsupported image source (not data:image/ or content://): ${element.src}")
                         }
-                        val params = android.widget.LinearLayout.LayoutParams(320, 320)
-                        params.setMargins(0, 12, 0, 12)
+                        val params = android.widget.LinearLayout.LayoutParams(
+                            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                            android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+                        )
+                        params.setMargins(0, 4, 0, 4)
                         layoutParams = params
+                        adjustViewBounds = true
+                        val maxHeightPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 300f, context.resources.displayMetrics).toInt()
+                        setMaxHeight(maxHeightPx)
+                        scaleType = ImageView.ScaleType.FIT_CENTER
+
                         background = GradientDrawable().apply {
                             cornerRadius = 20f
                             setColor(ContextCompat.getColor(context, R.color.canvas_bg_dark))
