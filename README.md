@@ -190,7 +190,7 @@ Ensure the IP addresses and ports configured in the client's `WebRTCManager.kt` 
 
 ## 🐞 Known Issues
 
-- issues related to webRTC has been fixed by setting up STUN/TURN server.
+- Issues related to WebRTC have been fixed by setting up a STUN/TURN server. Special thanks to [The KNVB on Stack Overflow](https://stackoverflow.com/users/2018278/the-knvb) for their invaluable guidance on this! 
 - **Gemini Live API Limitation:** When running tool/function calls asynchronously, the Gemini Live API is unable to reliably execute sequential function calls. It may execute a single call more than once, and does not relate the result of one function call to another. This is a limitation of the Gemini API itself, not of this implementation(correct me if i am wrong).
 
 ---
