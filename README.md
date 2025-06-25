@@ -20,9 +20,9 @@ The repository also includes:
 
 ## 📺 Demo Video
 
-[![Watch the demo](https://img.youtube.com/vi/WVsYYJ--WXM/0.jpg)](https://youtube.com/shorts/WVsYYJ--WXM?si=b8UClQgCT83LuZvF)
+[![Watch the demo](https://img.youtube.com/vi/vXs2ktkDpAg/0.jpg)](https://youtube.com/shorts/vXs2ktkDpAg?feature=share)
 
-Or watch on [YouTube](https://youtube.com/shorts/WVsYYJ--WXM?si=b8UClQgCT83LuZvF).
+Or watch on [YouTube](https://youtube.com/shorts/vXs2ktkDpAg?feature=share).
 
 > **Note:** This demo video is from an earlier version of the app. The current version has more features and improvements, but I couldn't record a new video due to some issues in the app.
 

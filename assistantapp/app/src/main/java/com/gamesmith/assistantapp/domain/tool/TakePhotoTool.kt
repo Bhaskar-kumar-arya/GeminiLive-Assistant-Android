@@ -23,7 +23,7 @@ class TakePhotoTool : NativeTool {
     override val description: String = "opens the device camera,and returns the image URI after the user has taken the photo.wait till you recieve one and dont assume on your own"
     override val parametersJsonSchema: String = """{"type":"object","properties":{},"required":[]}"""
     override val defaultBehavior: String? = "BLOCKING"
-    override val defaultScheduling: String? = "WHEN_IDLE"
+    override val defaultScheduling: String? = "INTERRUPT"
 
     override suspend fun execute(
         args: Map<String, Any>,

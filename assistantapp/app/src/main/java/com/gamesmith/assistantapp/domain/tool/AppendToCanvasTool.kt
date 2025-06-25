@@ -25,7 +25,7 @@ Do not use this if a canvas has not been created yet.
 """
     override val parametersJsonSchema: String = """{"type":"object","properties":{"schema":{"type":"string","description":"A JSON string (all double quotes) representing ToolUiSchema."}},"required":["schema"]}"""
     override val defaultBehavior: String? = "NON_BLOCKING"
-    override val defaultScheduling: String? = "WHEN_IDLE"
+    override val defaultScheduling: String? = "INTERRUPT"
 
     override suspend fun execute(
         args: Map<String, Any>,

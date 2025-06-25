@@ -14,7 +14,7 @@ class SendMessageTool : NativeTool {
     override val description: String = "Sends a message or media via WhatsApp (default) or SMS. Params: recipient number (required for text), message (required for text), mediaUri (optional, required for media), app (optional: 'whatsapp' or 'sms'). If sending media, message is optional."
     override val parametersJsonSchema: String = """{"type":"object","properties":{"recipient":{"type":"string"},"message":{"type":"string"},"mediaUri":{"type":"string"},"app":{"type":"string","enum":["whatsapp","sms"]}},"required":[]}"""
     override val defaultBehavior: String? = "NON_BLOCKING"
-    override val defaultScheduling: String? = "WHEN_IDLE"
+    override val defaultScheduling: String? = "INTERRUPT"
 
     override suspend fun execute(
         args: Map<String, Any>,

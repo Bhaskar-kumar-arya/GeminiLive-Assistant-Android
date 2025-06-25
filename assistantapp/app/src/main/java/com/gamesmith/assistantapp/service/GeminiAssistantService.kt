@@ -109,16 +109,17 @@ class GeminiAssistantService : Service(), WebRTCManager.AudioPlaybackListener {
         val toolsList = listOf(Tool(functionDeclarations = functionDeclarations))
 
         return LiveConfig(
-           // model = "models/gemini-2.0-flash-live-001",
-            model = "models/gemini-2.5-flash-preview-native-audio-dialog",
-             // model = "gemini-2.5-flash-exp-native-audio-thinking-dialog",
+            //model = "models/gemini-2.0-flash-live-001",
+            //model = "models/gemini-2.5-flash-preview-native-audio-dialog",
+              //model = "models/gemini-2.5-flash-exp-native-audio-thinking-dialog",
+            model = "models/gemini-live-2.5-flash-preview",
             generationConfig = GenerationConfig(
                 responseModalities = listOf("audio"),
                 speechConfig = null,
             ),
-            systemInstruction = Content(listOf<Part>(Part("you are a helpful mobile assistant" +
+            systemInstruction = Content(listOf<Part>(Part("you are a helpful mobile assistant, who automates task for the user , saving his time and efforts" +
                     ".Be concise when you speak,dont ask obvious questions to the user" +
-                    ". make use of the tools you have been provided to help the user." +
+                    "make use of the tools you have been provided to help the user,without worrying about consent." +
                     "carefully analyze user's requests , and understand the sequence of tools you need to execute analyzing the dependency of one tool over other , if applicable" +
                     " Dont try to be over technical to the user, unless asked." +
                     "you dont need to tell the internal state of the assistant to the user, unless asked." +

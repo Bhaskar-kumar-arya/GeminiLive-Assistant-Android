@@ -9,7 +9,7 @@ class FindContactTool : NativeTool {
     override val description: String = "Finds a contact by name and returns all associated phone numbers. Name matching is case-insensitive and allows slight variations. Returns an error if no contact is found.it is generally better to display contact number (in canvas) rather than speaking...choose wisely.you can let users choose if found multiple contact numbers using thee canvas tool."
     override val parametersJsonSchema: String = """{"type":"object","properties":{"name":{"type":"string","description":"The name of the contact to search for."}},"required":["name"]}"""
     override val defaultBehavior: String? = "NON_BLOCKING"
-    override val defaultScheduling: String? = "WHEN_IDLE"
+    override val defaultScheduling: String? = "INTERRUPT"
 
     override suspend fun execute(
         args: Map<String, Any>,

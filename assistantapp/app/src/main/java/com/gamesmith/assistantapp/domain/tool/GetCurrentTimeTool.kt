@@ -10,7 +10,7 @@ class GetCurrentTimeTool : NativeTool {
     override val description: String = "Returns the current device time as a formatted string."
     override val parametersJsonSchema: String = "{}" // No parameters
     override val defaultBehavior: String? = "NON_BLOCKING"
-    override val defaultScheduling: String? = "WHEN_IDLE"
+    override val defaultScheduling: String? = "INTERRUPT"
 
     override suspend fun execute(
         args: Map<String, Any>,
